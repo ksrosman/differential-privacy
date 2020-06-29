@@ -1,7 +1,5 @@
 # Differential Privacy
 
-# This is a test
-
 This project contains a set of libraries of ε- and (ε, δ)-differentially private
 algorithms, which can be used to produce aggregate statistics over numeric data
 sets containing private or sensitive information. The functionality is currently
