@@ -50,11 +50,25 @@ class OrderStatisticsBuilder
       return base::InvalidArgumentError(
           "Upper bound cannot be less than lower bound.");
     }
-    ASSIGN_OR_RETURN(mechanism_,
-                     AlgorithmBuilder::laplace_mechanism_builder_
-                         ->SetEpsilon(AlgorithmBuilder::epsilon_.value())
-                         .SetSensitivity(1)
-                         .Build());
+
+    std::unique_ptr<NumericalMechanism> has_to_be_laplace;
+    ASSIGN_OR_RETURN(
+        has_to_be_laplace,
+        AlgorithmBuilder::mechanism_builder_
+            ->SetEpsilon(AlgorithmBuilder::epsilon_.value())
+            .SetL0Sensitivity(AlgorithmBuilder::l0_sensitivity_.value_or(1))
+            .SetLInfSensitivity(AlgorithmBuilder::linf_sensitivity_.value_or(1))
+            .Build());
+
+    // TODO: Remove the following dynamic_cast.
+    mechanism_ = absl::WrapUnique<LaplaceMechanism>(
+        dynamic_cast<LaplaceMechanism*>(has_to_be_laplace.release()));
+
+    if (mechanism_ == nullptr) {
+      return base::InvalidArgumentError(
+          "Order statistics are only supported for Laplace mechanism.");
+    }
+
     quantiles_ = absl::make_unique<base::Percentile<T>>();
     return base::OkStatus();
   }

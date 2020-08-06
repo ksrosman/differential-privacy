@@ -446,28 +446,37 @@ class GaussianPrivacyLossDistributionTest(parameterized.TestCase):
         value_discretization_interval=1)
     self.assertAlmostEqual(expected_x, pld.inverse_privacy_loss(privacy_loss))
 
-  @parameterized.parameters((1, 1, -1, 1, {
+  @parameterized.parameters((1, 1, -1, 1, True, {
       math.inf: 0.15865525,
       -0.5: 0.15865525
-  }), (3, 3, -3, 3, {
+  }), (3, 3, -3, 3, True, {
       math.inf: 0.15865525,
       -0.5: 0.15865525
-  }), (1, 2, -1, 1, {
+  }), (1, 2, -1, 1, True, {
       math.inf: 0.15865525,
       0: 0.15865525
-  }), (4, 8, -4, 4, {
+  }), (4, 8, -4, 4, True, {
       math.inf: 0.15865525,
       0: 0.15865525
+  }), (1, 1, -1, 1, False, {
+      1.5: 0.15865525,
+  }), (3, 3, -3, 3, False, {
+      1.5: 0.15865525,
+  }), (1, 2, -1, 1, False, {
+      4.0: 0.15865525,
+  }), (4, 8, -4, 4, False, {
+      4.0: 0.15865525,
   }))
   def test_gaussian_privacy_loss_tail(self, standard_deviation, sensitivity,
                                       expected_lower_x_truncation,
                                       expected_upper_x_truncation,
+                                      pessimistic_estimate,
                                       expected_tail_probability_mass_function):
     pld = privacy_loss_distribution.GaussianPrivacyLossDistribution(
         standard_deviation,
         sensitivity=sensitivity,
         value_discretization_interval=1,
-        pessimistic_estimate=True,
+        pessimistic_estimate=pessimistic_estimate,
         log_mass_truncation_bound=math.log(2) + stats.norm.logcdf(-1))
     tail_pld = pld.privacy_loss_tail()
     self.assertAlmostEqual(expected_lower_x_truncation,
@@ -478,25 +487,23 @@ class GaussianPrivacyLossDistributionTest(parameterized.TestCase):
                             tail_pld.tail_probability_mass_function)
 
   @parameterized.parameters((1, 1, {
-      2: 0.14988228,
+      2: 0.12447741,
       1: 0.38292492,
       0: 0.30853754
   }), (5, 5, {
-      2: 0.14988228,
+      2: 0.12447741,
       1: 0.38292492,
       0: 0.30853754
   }), (1, 2, {
-      0: 0.15865525,
-      1: 0.14988228,
+      1: 0.30853754,
       2: 0.19146246,
       3: 0.19146246,
-      4: 0.14988228
+      4: 0.12447741
   }), (3, 6, {
-      0: 0.15865525,
-      1: 0.14988228,
+      1: 0.30853754,
       2: 0.19146246,
       3: 0.19146246,
-      4: 0.14988228
+      4: 0.12447741
   }))
   def test_gaussian_varying_standard_deviation_and_sensitivity(
       self, standard_deviation, sensitivity,
@@ -505,20 +512,19 @@ class GaussianPrivacyLossDistributionTest(parameterized.TestCase):
         standard_deviation,
         sensitivity=sensitivity,
         value_discretization_interval=1,
-        log_mass_truncation_bound=math.log(2) + stats.norm.logcdf(-1))
-    self.assertAlmostEqual(stats.norm.cdf(-1), pld.infinity_mass)
+        log_mass_truncation_bound=math.log(2) + stats.norm.logcdf(-0.9))
+    self.assertAlmostEqual(stats.norm.cdf(-0.9), pld.infinity_mass)
     dictionary_almost_equal(
         self, expected_rounded_probability_mass_function,
         pld.rounded_probability_mass_function)
 
   @parameterized.parameters((0.5, {
-      3: 0.14988228,
+      3: 0.12447741,
       2: 0.19146246,
       1: 0.19146246,
-      0: 0.14988228,
-      -1: 0.15865525,
+      0: 0.30853754,
   }), (0.3, {
-      5: 0.08330840,
+      5: 0.05790353,
       4: 0.10261461,
       3: 0.11559390,
       2: 0.11908755,
@@ -531,21 +537,21 @@ class GaussianPrivacyLossDistributionTest(parameterized.TestCase):
     pld = privacy_loss_distribution.GaussianPrivacyLossDistribution(
         1,
         value_discretization_interval=value_discretization_interval,
-        log_mass_truncation_bound=math.log(2) + stats.norm.logcdf(-1))
-    self.assertAlmostEqual(stats.norm.cdf(-1), pld.infinity_mass)
+        log_mass_truncation_bound=math.log(2) + stats.norm.logcdf(-0.9))
+    self.assertAlmostEqual(stats.norm.cdf(-0.9), pld.infinity_mass)
     dictionary_almost_equal(
         self, expected_rounded_probability_mass_function,
         pld.rounded_probability_mass_function)
 
   @parameterized.parameters((1, {
-      1: 0.14988228,
+      1: 0.30853754,
       0: 0.38292492,
-      -1: 0.14988228
+      -1: 0.12447741
   }), (2, {
-      0: 0.14988228,
+      0: 0.12447741,
       1: 0.19146246,
       2: 0.19146246,
-      3: 0.14988228
+      3: 0.30853754,
   }))
   def test_gaussian_optimistic(self, sensitivity,
                                expected_rounded_probability_mass_function):
@@ -554,7 +560,7 @@ class GaussianPrivacyLossDistributionTest(parameterized.TestCase):
         sensitivity=sensitivity,
         pessimistic_estimate=False,
         value_discretization_interval=1,
-        log_mass_truncation_bound=math.log(2) + stats.norm.logcdf(-1))
+        log_mass_truncation_bound=math.log(2) + stats.norm.logcdf(-0.9))
     self.assertAlmostEqual(0, pld.infinity_mass)
     dictionary_almost_equal(
         self, expected_rounded_probability_mass_function,
