@@ -514,7 +514,7 @@ class GaussianMechanism : public NumericalMechanism {
     double b = epsilon * sigma / l2_sensitivity_;
     double c = exp(epsilon);
 
-    if (isinf(b)) {
+    if (std::isinf(b)) {
       // If either l2_sensitivity_ goes to 0 or e^epsilon goes to infinity,
       // delta goes to 0.
       return 0;
